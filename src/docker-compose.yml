@@ -1,0 +1,32 @@
+version: '3.4'
+
+services:
+  shopmanager:
+    image: ${DOCKER_REGISTRY-}shopmanager
+    build:
+      context: .
+      dockerfile: ShopManager/Dockerfile
+
+  catalogapi:
+    image: ${DOCKER_REGISTRY-}catalogapi
+    build:
+      context: .
+      dockerfile: Services/CatalogApi/Dockerfile
+
+  sso:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev --proxy edge --import-realm
+      
+  frontend:
+    image: ${DOCKER_REGISTRY-}frontend
+    build:
+      context: .
+      dockerfile: Frontend/WebSPA/Dockerfile
+      args:
+        - BASE_URL=${NS_BASE_URL:-localhost}
+        - TOKEN_SERVICE_URL=${NS_BASE_URL:-localhost}/identity/realms/nevashop
+        - OIDC_CLIENT_SECRET=AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB
+
+  # Only for API sample
+  whoamiapi:
+    image: jwilder/whoami

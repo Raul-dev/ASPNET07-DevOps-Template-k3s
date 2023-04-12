@@ -1,0 +1,92 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShopManager", "ShopManager\ShopManager.csproj", "{B3BCAA3A-D527-485D-9E4B-6C07D2E71EF1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{A0B46002-4C7F-493F-B6C6-2028622EED74}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{34CBE967-1E19-4B77-B114-21EF7F6B897A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrderApi", "Services\OrderApi\OrderApi.csproj", "{A39D4163-F4DE-4EFB-9E4E-DFAF99FD33AA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CatalogApi", "Services\CatalogApi\CatalogApi.csproj", "{6CAFC3C3-1025-4080-8CEF-7F697CB42A80}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{94EC01CF-F541-4775-A5CA-C47CC696EB4E}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitlab-ci.yml = ..\.gitlab-ci.yml
+		docker-compose.elk.yml = docker-compose.elk.yml
+		docker-compose.misc.yml = docker-compose.misc.yml
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "srv", "srv", "{2F56B467-EEF3-4AE5-9F82-0738C1191976}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nginx", "nginx", "{37AAD9A7-B0C2-4520-80C6-A917B42A63E3}"
+	ProjectSection(SolutionItems) = preProject
+		srv\nginx\backend.conf.template = srv\nginx\backend.conf.template
+		srv\nginx\proxy.conf = srv\nginx\proxy.conf
+		srv\nginx\ssl.conf.template = srv\nginx\ssl.conf.template
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "buildcertificate", "buildcertificate", "{8D2BDAB5-391C-4D7B-B4FC-06CA1B31FDE8}"
+	ProjectSection(SolutionItems) = preProject
+		srv\buildcertificate\buildcrt.ps1 = srv\buildcertificate\buildcrt.ps1
+		srv\buildcertificate\buildcrt.sh = srv\buildcertificate\buildcrt.sh
+		srv\buildcertificate\host.docker.internal.conf = srv\buildcertificate\host.docker.internal.conf
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Frontend", "Frontend", "{054B9EFC-79F9-43A6-B260-321EB4293698}"
+	ProjectSection(SolutionItems) = preProject
+		Frontend\WebSPA\Dockerfile = Frontend\WebSPA\Dockerfile
+		Frontend\WebSPA\nginx\links.html = Frontend\WebSPA\nginx\links.html
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gitlabcicd", "gitlabcicd", "{D32B868A-2AA8-4058-A1A5-737B0D6DA495}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitlab-ci.yml = ..\.gitlab-ci.yml
+		..\deployment\gitlabci\docker-compose.elk.yml = ..\deployment\gitlabci\docker-compose.elk.yml
+		..\deployment\gitlabci\docker-compose.misc.yml = ..\deployment\gitlabci\docker-compose.misc.yml
+		..\deployment\gitlabci\docker-compose.override.yml = ..\deployment\gitlabci\docker-compose.override.yml
+		..\deployment\gitlabci\docker-compose.yml = ..\deployment\gitlabci\docker-compose.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B3BCAA3A-D527-485D-9E4B-6C07D2E71EF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3BCAA3A-D527-485D-9E4B-6C07D2E71EF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3BCAA3A-D527-485D-9E4B-6C07D2E71EF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3BCAA3A-D527-485D-9E4B-6C07D2E71EF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34CBE967-1E19-4B77-B114-21EF7F6B897A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34CBE967-1E19-4B77-B114-21EF7F6B897A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34CBE967-1E19-4B77-B114-21EF7F6B897A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34CBE967-1E19-4B77-B114-21EF7F6B897A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A39D4163-F4DE-4EFB-9E4E-DFAF99FD33AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A39D4163-F4DE-4EFB-9E4E-DFAF99FD33AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A39D4163-F4DE-4EFB-9E4E-DFAF99FD33AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A39D4163-F4DE-4EFB-9E4E-DFAF99FD33AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CAFC3C3-1025-4080-8CEF-7F697CB42A80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CAFC3C3-1025-4080-8CEF-7F697CB42A80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CAFC3C3-1025-4080-8CEF-7F697CB42A80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CAFC3C3-1025-4080-8CEF-7F697CB42A80}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A39D4163-F4DE-4EFB-9E4E-DFAF99FD33AA} = {A0B46002-4C7F-493F-B6C6-2028622EED74}
+		{6CAFC3C3-1025-4080-8CEF-7F697CB42A80} = {A0B46002-4C7F-493F-B6C6-2028622EED74}
+		{2F56B467-EEF3-4AE5-9F82-0738C1191976} = {94EC01CF-F541-4775-A5CA-C47CC696EB4E}
+		{37AAD9A7-B0C2-4520-80C6-A917B42A63E3} = {2F56B467-EEF3-4AE5-9F82-0738C1191976}
+		{8D2BDAB5-391C-4D7B-B4FC-06CA1B31FDE8} = {2F56B467-EEF3-4AE5-9F82-0738C1191976}
+		{D32B868A-2AA8-4058-A1A5-737B0D6DA495} = {94EC01CF-F541-4775-A5CA-C47CC696EB4E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5BB7CB3-3EF3-432B-8828-B66FD5CD40ED}
+	EndGlobalSection
+EndGlobal

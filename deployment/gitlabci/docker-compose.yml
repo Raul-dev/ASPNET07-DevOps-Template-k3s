@@ -1,0 +1,24 @@
+version: '3.4'
+
+services:
+  shopmanager:
+    image: ${DOCKER_REGISTRY-}/shopmanager:${DOCKER_TAG}
+  catalogapi:
+    image: ${DOCKER_REGISTRY-}/catalogapi:${DOCKER_TAG}
+
+  frontend:
+    image: ${DOCKER_REGISTRY-}/frontend:${DOCKER_TAG}
+
+  sso:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev --proxy edge --import-realm
+      
+  whoamiapi:
+    image: jwilder/whoami
+
+networks:
+  prjnet:
+    external: true
+    name: ${NET_NAME:-dev_shop}      
+
+

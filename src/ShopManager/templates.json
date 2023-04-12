@@ -1,0 +1,20 @@
+{
+  "templates": [
+    {
+      "Name": "Standard",
+      "Template": "<h1>Head: {Head}</h1>\n<p>Body: {Body1}</p>\n<p>Footer: {Footer}</p>"
+    },
+    {
+      "Name": "HyperlinkConfirmation",
+      "Template": "<h1>Hi {Name}</h1>\n<p>Please use <a href={Link}>this link</a> {Purpose}</p>\n"
+    },
+    {
+      "Name": "RequestStateChanged",
+      "Template": "<h1>Hi {Name}</h1>\n<p>Your request state has been chaged from {OldState} to {NewState}</p>\n<p>Please check <a href=\"{Link}\">offers details</a></p>"
+    },
+    {
+      "Name": "OfferState",
+      "Template": "<h1>Hi {Name}</h1>\n<p>Offer you have joind state has been chaged from {OldState} to {NewState}</p>\n<p>Please check <a href=\"{Link}\">offers details</a></p>"
+    }
+  ]
+}

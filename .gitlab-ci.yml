@@ -1,0 +1,148 @@
+image: docker:dind
+
+stages:
+  - build
+  - deploy
+variables:
+# Set the variable $KUBE_CONTEXT through the GitLab UI, or set it here by
+# uncommenting the following two lines and replacing the Agent's path with your own:
+# variables:
+  KUBE_CONTEXT: "shop/nevashop:prod"
+  GIT_SSL_NO_VERIFY: "true"
+
+.kube-context:
+  before_script:
+    - if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi
+
+.deploy-script: &deploy-script
+  - docker-compose -f ./deployment/gitlabci/docker-compose.misc.yml up -d 
+  - docker-compose -f ./deployment/gitlabci/docker-compose.elk.yml up -d 
+
+.before-script: &before-script
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - echo "mnt test"
+  #- ls /mnt/test57
+  # TODO for prod environment
+  #- export DOCKER_TAG=$(echo $CI_COMMIT_BRANCH | sed 's#/#_#g')-$CI_COMMIT_SHORT_SHA
+  - export DOCKER_TAG=latest
+  - export DOCKER_REGISTRY=$CI_REGISTRY_IMAGE
+  - docker network inspect dev_shop >/dev/null 2>&1 || docker network create --driver bridge dev_shop
+  - export NET_NAME=dev_shop
+  # TODO for prod environment
+  - export NS_BASE_URL=$(if [[ $CI_ENVIRONMENT_NAME = production ]]; then echo "ubuntu22.neva.loc"; else echo "ubuntu22.neva.loc"; fi) 
+  - echo $NS_BASE_URL
+  - export NS_ASPNETCORE_URLS="http://*:80"
+  #- export NS_CERTS=/srv/nginx/certs
+  - export NS_CERTS="/srv/nginx/certssso"
+  - export NS_LOG_PATH="/srvlogs"
+  - export NS_PROXY_PATH=/srv/nginx/proxy.conf
+  - export NS_SHOPMANAGER_PATHBASE=/admin
+  - export NS_IDENTITYAPI_PATHBASE=/identity
+  - export NS_CATALOGAPI_PATHBASE=/catalog
+  - export NS_SCHEMA=https
+  - export NS_CERTS_ROOT=./srv/buildcertificate/rootca
+
+build-containers-branch:
+  stage: build
+  tags: 
+    - $RUNNER_NAME
+  before_script:
+    - *before-script
+  script:
+    #- $BuildOption = --no-cache
+    #- mkdir -p ./src/srv/buildcertificate/rootca
+    #- cp -R /rootca/* ./src/srv/buildcertificate/rootca
+    - cp -r ./src/srv/sso/* /srv/sso
+    #- mkdir -p /srv/nginx
+    - cp -r ./src/Frontend/WebSPA/nginx/* /srv/nginx/
+    - docker build $BuildOption --build-arg CERTS_PATH=$NS_CERTS_ROOT -t $CI_REGISTRY_IMAGE/catalogapi:$DOCKER_TAG ./src -f ./src/Services/CatalogApi/Dockerfile
+    - docker push $CI_REGISTRY_IMAGE/catalogapi:$DOCKER_TAG
+    #- docker build $BuildOption --build-arg CERTS_PATH=$NS_CERTS_ROOT -t $CI_REGISTRY_IMAGE/identityapi:$DOCKER_TAG ./src -f ./src/Services/IdentityApi/Dockerfile
+    #- docker push $CI_REGISTRY_IMAGE/identityapi:$DOCKER_TAG
+    # Container IP. TODO get external IP
+    #- export ADDRESS_IP=$(ip -f inet addr show eth0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
+    #- export ADDRESS_IP=$(/sbin/ip route|awk '/default/ { print $3 }')
+    - ADDRESS_IP=192.168.0.45
+    - echo ${ADDRESS_IP}
+    - sed 's/127.0.0.1/'$ADDRESS_IP'/g' ./src/Frontend/WebSPA/nginx/links.html > links.html && mv links.html ./src/Frontend/WebSPA/nginx/links.html
+    - docker build $BuildOption --build-arg BASE_URL=$NS_BASE_URL --build-arg OIDC_CLIENT_SECRET=AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB --build-arg TOKEN_SERVICE_URL=$NS_BASE_URL/identity/realms/nevashop -t $CI_REGISTRY_IMAGE/frontend:$DOCKER_TAG ./src -f ./src/Frontend/WebSPA/Dockerfile
+    - docker push  $CI_REGISTRY_IMAGE/frontend:$DOCKER_TAG
+    - docker build $BuildOption --build-arg CERTS_PATH=$NS_CERTS_ROOT -t $CI_REGISTRY_IMAGE/shopmanager:$DOCKER_TAG ./src -f ./src/ShopManager/Dockerfile
+    - docker push $CI_REGISTRY_IMAGE/shopmanager:$DOCKER_TAG
+
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule" && $CI_PIPELINE_SOURCE != "merge_request_event"
+    - when: never
+
+
+deploy-branch:
+  stage: deploy
+  when: manual
+  tags: 
+    - $RUNNER_NAME
+  variables:
+    COMPOSE_PROJECT_NAME: "nevashop"
+
+  before_script:
+    - *before-script
+    - *deploy-script
+
+  script:
+    - echo $COMPOSE_PROJECT_NAME
+    - echo $CI_ENVIRONMENT_NAME
+    # TODO for prod environment
+    #- export ASP_ENV=$(echo $CI_ENVIRONMENT_NAME | awk '{print toupper(substr($0,0,1))tolower(substr($0,2))}')
+    #- echo $ASP_ENV
+    - rm -rf $NS_LOG_PATH
+    - docker-compose -f ./deployment/gitlabci/docker-compose.yml down
+    - docker-compose -f ./deployment/gitlabci/docker-compose.yml -f ./deployment/gitlabci/docker-compose.override.yml  up -d --force-recreate
+    - sleep 5
+    - docker logs nevashop-shopmanager-1
+
+destroy-deployed-branch:
+  stage: build
+  when: manual
+  tags: 
+    - $RUNNER_NAME  
+  variables:
+    COMPOSE_PROJECT_NAME: "nevashop"
+
+  before_script:
+    - *before-script    
+  script:
+    - docker-compose -f ./deployment/gitlabci/docker-compose.yml down
+    - docker-compose -f ./deployment/gitlabci/docker-compose.misc.yml down
+    - docker-compose -f ./deployment/gitlabci/docker-compose.elk.yml down
+
+k3s-deployment:
+  extends: [.kube-context]
+  stage: deploy
+  when: manual
+  image:
+    name: bitnami/kubectl:1.21
+    entrypoint: [""]
+  tags: 
+    - $RUNNER_NAME  
+    
+  script:
+    - kubectl config get-contexts
+    - kubectl get pods --all-namespaces --insecure-skip-tls-verify
+    - ls
+    #- kubectl get pods --all-namespaces 
+    - kubectl apply -f ./deployment/kuber/11_whoamiapi.yaml --insecure-skip-tls-verify
+
+k3s-destroy-deployed-branch:
+  extends: [.kube-context]
+  stage: build
+  when: manual
+  image:
+    name: bitnami/kubectl:1.21
+    entrypoint: [""]
+  tags: 
+    - $RUNNER_NAME  
+    
+  script:
+    - kubectl config get-contexts
+    - kubectl get pods --all-namespaces --insecure-skip-tls-verify
+    #- kubectl get pods --all-namespaces 
+    - kubectl delete -f ./deployment/kuber/11_whoamiapi.yaml --insecure-skip-tls-verify

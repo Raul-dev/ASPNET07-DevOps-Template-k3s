@@ -1,0 +1,6 @@
+- pipeline.id: postgres_logs
+  pipeline.workers: 3
+  path.config: "/usr/share/logstash/config/pipelines/postgres_logs.conf"
+- pipeline.id: service_stamped_json_logs
+  path.config: "/usr/share/logstash/config/pipelines/service_stamped_json_logs.conf"  
+  queue.type: persisted

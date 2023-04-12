@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+	<style>
+      a{
+        display:inline-block;
+        margin: 8px;
+        margin-left: 30px;
+        font-family: Helvetica;
+        font-size: 1.0em;
+      }
+	  p{
+        display:inline-block;
+        margin: 8px;
+        margin-left: 30px;
+        font-family: Helvetica;
+        font-size: 2.0em;
+      }
+	  
+    </style>
+</head>
+<body>
+
+<p>Nginx links as subfolders:</p> 
+<br>	
+  <a class="api-links" data-href="api">localhost/api</a></br>
+  <script>
+    let collection = document.getElementsByClassName("api-links");
+    let hostname = window.location.hostname;
+    for(let i = 0; i < collection.length; ++i) {
+      let dataparam = collection[i].getAttribute("data-href");
+      let txt = hostname + "/" + dataparam;
+      collection[i].href = "http://" + txt;
+      collection[i].textContent = txt;
+    }
+  </script>
+</body>
+ 
+</html>

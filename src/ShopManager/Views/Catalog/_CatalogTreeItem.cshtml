@@ -1,0 +1,37 @@
+﻿@model CatalogTree
+@using ShopManager.Models.CatalogViewModels
+@using Microsoft.AspNetCore.Identity
+@using ShopManager.Models
+
+@{
+    //var controller = HttpContext.Current.Request.RequestContext.RouteData.Values["Controller"].ToString();
+    //  string cLayout = "";
+    //Layout = "_LayoutEmpty";
+    int i;
+    i  = 0;
+}
+@*
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+*@
+
+
+
+    <ul class="subfolder">
+
+
+
+    @foreach (var catalogTree in Model.s)
+    {
+            <li class="menu-item">
+                <div class="menu-item-wrapper">
+                    <button class="folder-opener">+</button>
+                @* <a class="item-name" asp-route-catalogId="@(catalogTree.id)" asp-area="" asp-controller="Catalog" asp-action="Index">@catalogTree.n</a>*@
+                    <a class="item-name" data-catalogid="@catalogTree.id" href="#">@catalogTree.n</a>
+
+
+                </div>
+            </li>
+    }
+
+     </ul>

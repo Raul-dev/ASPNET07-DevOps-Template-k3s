@@ -1,0 +1,50 @@
+version: '3.4'
+
+services:
+
+  frontendssl:
+    image: ${DOCKER_REGISTRY-}frontendssl
+    build:
+      context: .
+      dockerfile: sslproxy/Dockerfile
+    environment:
+      - VIRTUAL_HOST=${NS_BASE_URL:-localhost}
+      - VIRTUAL_PORT=80
+      - BACKEND_API=whoamiapi:8000
+    ports:
+      - 80
+    volumes:  
+      - ${NS_LOG_PATH:-./logs}/nginx:/var/logs
+    links:
+      - "whoamiapi"     
+    networks: 
+      - net-hub
+
+  whoamiapi:
+    image: jwilder/whoami
+    expose:
+      - "8000"
+    ports:
+      - 7005:8000      
+    networks: 
+      - net-hub
+
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx
+    depends_on:
+      - frontendssl
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ${NS_CERTS:-./srv/nginx/certs}:/etc/nginx/certs
+      - ./srv/nginx/proxy.conf:/etc/nginx/proxy.conf
+    ports:
+      - 80:80
+      - 443:443
+
+    networks: 
+      - net-hub
+
+networks:
+  net-hub:
+    external: true

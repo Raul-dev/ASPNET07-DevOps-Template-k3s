@@ -1,0 +1,123 @@
+﻿@model ShopManager.Models.CatalogViewModels.IndexViewModel
+@using ShopManager.Models.CatalogViewModels
+@using ShopManager.Models
+@using Microsoft.Extensions.Options
+@inject IOptions<ApiSettings> _apiSettings
+@{
+    ViewData["Title"] = "Catalog Page";
+
+    string location = new Uri($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}{Context.Request.QueryString}").ToString();
+
+    string url = location.Replace("IndexCatalog", "_catalogitems");
+
+}
+
+<p id="mytestdate">mytestdate</p>
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb" id="breadcrumb-nav">
+        <li class="breadcrumb-item" aria-current="page" id="main-page"><a href="#" data-catalogid="0" data-target="root">All items</a> </li>
+    </ol>
+</nav>
+
+<div class="text-center">
+    <div class="row">
+        <div class="sidebar-left col-3">
+            <nav id="fixed-side-container">
+                <ul class="sidebar-menu">
+                    <li class="menu-item">
+                        <div class="menu-item-wrapper">
+                            <button class="folder-opener">+</button>
+                            <a class="item-name">All items</a>
+                        </div>
+
+                        <ul class="subfolder">
+                            <li class="menu-item">
+                                <div class="menu-item-wrapper">
+                                    <a href="#" class="item-name">item 1</a>
+                                </div>
+                            </li>
+                            <li class="menu-item">
+                                <div class="menu-item-wrapper">
+                                    <button class="folder-opener">+</button>
+                                    <a href="#" class="item-name">more items</a>
+                                </div>
+
+                                <ul class="subfolder">
+                                    <li class="menu-item">
+                                        <div class="menu-item-wrapper">
+                                            <a href="#" class="item-name">item 3</a>
+                                        </div>
+                                    </li>
+                                    <li class="menu-item">
+                                        <div class="menu-item-wrapper">
+                                            <a href="#" class="item-name">item 4</a>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="menu-item">
+                                <div class="menu-item-wrapper">
+                                    <button class="folder-opener">+</button>
+                                    <a href="#" class="item-name">more items</a>
+                                </div>
+
+                                <ul class="subfolder">
+                                    <li class="menu-item">
+                                        <div class="menu-item-wrapper">
+                                            <a href="#" class="item-name">item 3</a>
+                                        </div>
+                                    </li>
+                                    <li class="menu-item">
+                                        <div class="menu-item-wrapper">
+                                            <a href="#" class="item-name">item 4</a>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <div id="rootcat" data-url="@url">
+                        @foreach (var catalogTree in Model.CatalogTree)
+                        {
+                        <li class="menu-item" id="rootcat" data-url="@url">
+
+                            <div class="menu-item-wrapper">
+                                <button class="folder-opener">+</button>
+                                <a class="item-name" data-catalogid="@catalogTree.id" href="#">@catalogTree.n</a>
+                            </div>
+                            <partial name="_CatalogTreeItem" model="@catalogTree" />
+                        </li>
+
+                        }
+        </div>
+        </ul>
+        </nav>
+    </div>
+    <div class="content col-6" id="ItemsContent">
+            @if (Model.CatalogItems.Count() > 0)
+            {
+            <partial name="_pagination" for="PaginationInfo" />
+
+            <div class="esh-catalog-items row">
+                    @foreach (var catalogItem in Model.CatalogItems)
+                    {
+                    <div class="esh-catalog-item col-md-6 col-lg-4 col-xl-3">
+                        <partial name="_product" model="catalogItem" />
+                    </div>
+                    }
+            </div>
+
+            <partial name="_pagination" for="PaginationInfo" />
+            }
+            else
+            {
+            <div class="esh-catalog-items row">
+                THERE ARE NO RESULTS THAT MATCH YOUR SEARCH
+            </div>
+            }
+
+    </div>
+    <div class="sidebar-right col-3">
+    </div>
+</div>
+</div>

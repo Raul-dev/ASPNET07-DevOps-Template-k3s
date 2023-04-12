@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgresdb:
+    build:
+      context: ./src/postgresdb
+    healthcheck:
+      test: test -f /tmp/finished.ok
+      interval: 5s
+      timeout: 10s
+      retries: 120
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${PASSWORD_DB:-postgres}
+      #- DB_NAME_API=productapi
+      - DB_NAME_API=keycloak
+    ports:
+      - '54321:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ${NS_LOG_PATH:-./logs}/postgres:/logs        
+    networks:
+      - prjnet  
+
+  traefik:
+    image: traefik:v1.7
+    command: --api --docker
+    restart: always
+    ports:
+      - "8081:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - prjnet  
+
+volumes:
+  postgres-data:
+
+networks:
+  prjnet:
+    external: true
+    name: ${NET_NAME:-dev_shop}

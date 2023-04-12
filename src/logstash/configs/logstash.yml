@@ -1,0 +1,5 @@
+
+http.host: 0.0.0.0
+node.name: logstash
+pipeline.workers: 1
+pipeline.batch.size: 1

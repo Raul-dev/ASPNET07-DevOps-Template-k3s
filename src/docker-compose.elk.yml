@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  elasticsearch:
+    image: "docker.io/bitnami/elasticsearch:8.5.3"
+    container_name: elasticsearch
+    healthcheck:
+      test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 50    
+    environment:
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "discovery.type=single-node"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: "docker.io/bitnami/kibana:8.5.3"
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS:http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy  
+
+  logstash:
+    build:
+      context: logstash/
+      dockerfile: Dockerfile
+
+    ports:
+      - 5044:5044
+      - "5000"
+      - 9600:9600
+    environment:
+      LS_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes:
+      # Turn on log in file log4j2.properties
+      #- ${NS_LOG_PATH:-./logs}/logstash:/var/log/logstash
+      - ${NS_LOG_PATH:-./logs}/postgres:/logs      
+    depends_on:
+      elasticsearch:
+        condition: service_healthy  
+
+  filebeatjson:
+    image: elastic/filebeat:8.5.3      
+    entrypoint: "filebeat -e -strict.perms=false"
+    container_name: filebeatjson
+    volumes:
+      - ./srv/filebeatjson/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ${NS_LOG_PATH:-./logs}:/src/logs
+    depends_on:
+      elasticsearch:
+        condition: service_healthy      
+      logstash:
+        condition: service_started
+
+volumes:
+  elasticsearch_data:
+    driver: local
+  logstash_data:
+    driver: local

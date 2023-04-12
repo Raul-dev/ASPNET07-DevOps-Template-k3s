@@ -1,0 +1,89 @@
+version: '3.4'
+
+services:
+  shopmanager:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${NS_ENV:-Development}
+      #- ASPNETCORE_URLS=${NS_ASPNETCORE_URLS:-https://*:443;http://*:80}
+      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - ASPNETCORE_PATHBASE=${NS_SHOPMANAGER_PATHBASE:-/}
+      - ConnectionStrings__DefaultConnection=Host=${NS_POSTGRES:-postgresdb};Port=${NS_POSTGRES_PORT:-5432};Database=nsshopmanager;Username=postgres;Password=${DB_PASSWORD:-postgres}
+      - ApiSettings__CatalogUrl=${NS_SCHEMA:-http}://${NS_BASE_URL:-localhost}/catalog/
+      - ApiSettings__CatalogHost_EXTERNAL=${NS_SCHEMA:-http}://${NS_BASE_URL:-localhost}/catalog/
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/${NS_BASE_URL:-localhost}.crt 
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/https/${NS_BASE_URL:-localhost}.key 
+      - ASPNETCORE_Kestrel__Certificates__Default__AllowInvalid=true
+    ports:
+      - 7003:80
+      - "443"
+    volumes:
+      - ${NS_CERTS:-./srv/nginx/certs}:/https/
+      - ${NS_LOG_PATH:-./logs}:/logs 
+
+  catalogapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${NS_ENV:-Development}
+      #- ASPNETCORE_URLS=${NS_ASPNETCORE_URLS:-https://+:443;http://+:80}
+      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - ASPNETCORE_PATHBASE=${NS_CATALOGAPI_PATHBASE:-/}
+      - ConnectionStrings__DefaultConnection=Host=${NS_POSTGRES:-postgresdb};Port=${NS_POSTGRES_PORT:-5432};Database=nscatalogapi;Username=postgres;Password=${DB_PASSWORD:-postgres}
+      - IdentityS4Settings__Secret=BDD0BF42-3652-4B3B-A5DD-715ACF1E53D3
+      - IdentityS4Settings__AuthorityURL=http://sso:8080/identity/realms/nevashop
+      - IdentityS4Settings__IssuerURL=https://${NS_BASE_URL:-localhost}/identity/realms/nevashop
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/${NS_BASE_URL:-localhost}.crt 
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/https/${NS_BASE_URL:-localhost}.key 
+      - ASPNETCORE_Kestrel__Certificates__Default__AllowInvalid=true
+
+    ports:
+      - 7002:80
+      - "443"
+    volumes:
+      - ${NS_CERTS:-./srv/nginx/certs}:/https/
+      - ${NS_LOG_PATH:-./logs}:/logs 
+
+  sso:
+    environment:
+      - MAINPAGE_SPA_SECRET=AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB
+      - SWAGGER_CATALOG_API_CLIENT_SECRET=pNaXyvOVBwzgYqDfB2NDGbfl1iUg8tIP
+      - MAINPAGE_BASE_URL=https://${NS_BASE_URL:-localhost}/
+      - KC_FEATURES='token-exchange scripts'
+      - KC_DB=postgres
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD=postgres
+      - KC_DB_URL=jdbc:postgresql://postgresdb/keycloak
+      - KC_HOSTNAME=host.docker.internal
+      - PROXY_ADDRESS_FORWARDING=true
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_RELATIVE_PATH=/identity/
+      - KC_HOSTNAME_STRICT=false
+    ports:
+      - 8088:8080
+      - 8443:8443 
+    volumes:
+      - ./srv/sso/realm.json:/opt/keycloak/data/import/realm.json
+
+  frontend:
+    environment:
+      - BACKEND_IDENTITY=${NS_IDENTITY_URL:-sso}
+      - BACKEND_CATALOG=${NS_CATALOG_URL:-catalogapi}
+      - BACKEND_ADMIN=shopmanager
+      - BACKEND_API=whoamiapi:8000
+      - BASE_URL=${NS_BASE_URL:-localhost}
+    ports:
+      - 80:80
+      - 443:443
+    volumes:  
+      - ./Frontend/WebSPA/nginx/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ./Frontend/WebSPA/nginx/security.conf:/etc/nginx/security.conf
+      - ./Frontend/WebSPA/nginx/proxy.conf:/etc/nginx/proxy.conf
+      - ./srv/nginx/certs/host.docker.internal.crt:/etc/nginx/certs/https.crt
+      - ./srv/nginx/certs/host.docker.internal.key:/etc/nginx/certs/key.key
+      - ${NS_LOG_PATH:-./logs}:/var/logs
+
+  whoamiapi:
+    expose:
+      - "8000"

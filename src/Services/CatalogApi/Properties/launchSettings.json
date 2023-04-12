@@ -1,0 +1,56 @@
+{
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5139"
+    },
+    "https": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "catalog/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_PATHBASE": "/catalog",
+        "ASPNETCORE_Kestrel__Certificates__Default__Path": "/https/host.docker.internal.crt",
+        "ASPNETCORE_Kestrel__Certificates__Default__KeyPath": "/https/host.docker.internal.key",
+        "ASPNETCORE_Kestrel__Certificates__Default__AllowInvalid": "true"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://host.docker.internal:7260;http://host.docker.internal:5139"
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_PATHBASE": "/catalog"
+      },
+
+
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/catalog/swagger",
+      "publishAllPorts": true,
+      "useSSL": false
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:51547",
+      "sslPort": 44350
+    }
+  }
+}

@@ -1,0 +1,10 @@
+gitops:
+  manifest_projects:
+  - id: Shop/NevaShop
+    default_namespace: gitlab-agent
+    paths:
+      # Change the following line
+    - glob: 'manifests/prod/*.{yaml,yml,json}'
+    ci_access:
+      projects:
+      - id: Shop/NevaShop

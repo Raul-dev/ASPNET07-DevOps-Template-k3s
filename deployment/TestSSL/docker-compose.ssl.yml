@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+
+  frontendssl:
+    image: ${DOCKER_REGISTRY-}frontendssl
+    build:
+      context: .
+      dockerfile: ssl/Dockerfile
+    environment:
+      - BASE_URL=${NS_BASE_URL:-localhost}
+      - BACKEND_API=whoamiapi:8000
+    ports:
+      - 80:80
+      - 443:443
+    volumes:  
+      - ${NS_LOG_PATH:-./logs}/nginx:/var/logs
+      - ${NS_CERTS:-./srv/nginx/certs}:/etc/nginx/certs
+      - ./srv/nginx/proxy.conf:/etc/nginx/proxy.conf
+    links:
+      - "whoamiapi"     
+
+  whoamiapi:
+    image: jwilder/whoami
+    expose:
+      - "8000"
+    ports:
+      - 7005:8000      

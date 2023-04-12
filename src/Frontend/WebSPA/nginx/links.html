@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+	<style>
+        h1 {
+            display:inline-block;
+        margin: 8px;
+        margin-left: 30px;
+        font-family: Helvetica;
+        }
+      a{
+        display:block;
+        margin: 8px;
+        margin-left: 30px;
+        margin-top: 1.2rem;
+        font-family: Helvetica;
+        font-size: 1.2em;
+      }
+	  p{
+        display:inline-block;
+        margin: 8px;
+        margin-left: 30px;
+        font-family: Helvetica;
+        font-size: 1.0em;
+      }
+	  
+    </style>
+
+   
+</head>
+<body>
+    
+
+    <h1>Nginx API links as subfolders:</h1>
+    <br />
+    <a class="api-links" data-href="/api" data-desc="">localhost/api</a>
+    <a class="api-links" data-href="/admin" data-desc="">localhost/admin</a>
+    <a class="api-links" data-href="/identity" data-desc="">localhost/identity</a>
+    <a class="api-links" data-href="/catalog/swagger" data-desc="">localhost/catalog/swagger</a>
+    <br/>
+    <br/>
+    <h1>Elasticsearch & Kibana and other:</h1>
+    <p>to view http links, you need to reset the hsts redirect settings in chrome for this domen or use IP address</p>
+    <br/>
+    <a href="chrome://net-internals/#hsts">chrome://net-internals/#hsts  - reset chrome hsts</a>
+    <br /> <br />
+    <p class="extapi-links" data-href=":5601" data-desc="   -Kibana log analiser">localhost:5601</p>
+    <br />
+    <a href="http://127.0.0.1:5601" >http://127.0.0.1:5601</a>
+    <br />
+    <p class="extapi-links" data-href=":8025" data-desc="   -MailHog">localhost:8025/</p>
+    <br />
+    <a href="http://127.0.0.1:8025" >http://127.0.0.1:8025</a>
+    <br />
+    <p class="extapi-links" data-href=":8080" data-desc="   -Traefik">localhost:8080</p>
+    <br />
+    <a href="http://127.0.0.1:8080" >http://127.0.0.1:8080</a>
+
+    <script src="https://cdn.jsdelivr.net/npm/dohjs@latest/dist/doh.min.js"></script>    
+    <script>
+
+        let collection1 = document.getElementsByClassName("extapi-links");
+            let hostname1 = window.location.hostname;
+            for (let i = 0; i < collection1.length; ++i) {
+                let dataparam = collection1[i].getAttribute("data-href");
+                let datadesc = collection1[i].getAttribute("data-desc");
+                let txt = hostname1 + dataparam;
+                collection1[i].textContent = "http://" + txt + datadesc;
+            }
+
+        let collection = document.getElementsByClassName("api-links");
+        let hostname = window.location.hostname;
+        for (let i = 0; i < collection.length; ++i) {
+            let dataparam = collection[i].getAttribute("data-href");
+            let datadesc = collection[i].getAttribute("data-desc");
+            let txt = hostname + dataparam;
+            collection[i].href = "http://" + txt;
+            collection[i].textContent = txt + datadesc;
+        }
+
+        let ext_links = document.getElementsByClassName("extapi-links");
+    </script>
+
+    </br>
+    </br>
+    
+</body>
+ 
+</html>

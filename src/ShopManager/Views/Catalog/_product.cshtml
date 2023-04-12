@@ -1,0 +1,25 @@
+﻿@model CatalogItem
+@using ShopManager.Models.CatalogViewModels
+@using ShopManager.Interfaces
+@using ShopManager.Models
+@using Microsoft.Extensions.Options
+
+
+@inject IOptions<ApiSettings> _apiSettings
+@{
+    
+    string url = new Uri($"{Context.Request.Scheme}://{Context.Request.Host}").ToString();
+    //string url = _apiSettings.Value.CatalogUrl;
+}
+<form asp-controller="Cart" asp-action="AddToCart">
+    <div class="card">
+        <img class="esh-catalog-thumbnail catalog-image-min card-img-top" src="@($"{_apiSettings.Value.CatalogHost_EXTERNAL}/v1/items/{Model.Id}/pic")" />
+        <div class="card-body">
+            <h5 class="card-title">@Model.Name</h5>
+            <h6 class="card-subtitle text-muted">@Model.Price.ToString("N2")$</h6>
+            <p class="card-text">Some dummy text for description of the product.</p>
+            <input class="esh-catalog-button btn btn-primary @((!User.Identity.IsAuthenticated) ? "is-disabled" : "")" type="submit" value="Edit" />
+        </div>
+    </div>
+    <input type="hidden" asp-for="@Model.Id" name="id" />
+</form>

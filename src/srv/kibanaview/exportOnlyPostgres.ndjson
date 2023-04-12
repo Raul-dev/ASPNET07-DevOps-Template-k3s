@@ -1,0 +1,2 @@
+{"attributes":{"fieldAttrs":"{}","fieldFormatMap":"{}","fields":"[]","name":"postgreslogs","runtimeFieldMap":"{}","sourceFilters":"[]","timeFieldName":"@timestamp","title":"postgreslogs*","typeMeta":"{}"},"coreMigrationVersion":"8.5.3","id":"e1b42f6b-5122-44b3-ae8d-c5aca57f5a70","migrationVersion":{"index-pattern":"8.0.0"},"references":[],"type":"index-pattern","updated_at":"2023-04-05T15:59:23.118Z","version":"WzIxMCwxXQ=="}
+{"excludedObjects":[],"excludedObjectsCount":0,"exportedCount":1,"missingRefCount":0,"missingReferences":[]}
