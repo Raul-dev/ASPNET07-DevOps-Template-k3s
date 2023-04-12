@@ -1,0 +1,1 @@
+# ASPNET07-DevOps-Template-k3s
