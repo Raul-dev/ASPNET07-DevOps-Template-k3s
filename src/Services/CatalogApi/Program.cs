@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using System;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Runtime.Intrinsics.X86;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,24 +55,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddSwaggerGen(options =>
 {
-   /* options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Version = "v1",
-        Title = "ToDo API",
-        Description = "An ASP.NET Core Web API for managing ToDo items",
-        TermsOfService = new Uri("https://example.com/terms"),
-        Contact = new OpenApiContact
-        {
-            Name = "Example Contact",
-            Url = new Uri("https://example.com/contact")
-        },
-        License = new OpenApiLicense
-        {
-            Name = "Example License",
-            Url = new Uri("https://example.com/license")
-        }
-    });
-   */
+
     // Include 'SecurityScheme' to use JWT Authentication
     var jwtSecurityScheme = new OpenApiSecurityScheme
     {
@@ -126,24 +110,25 @@ IdentityModelEventSource.ShowPII = true;
 try
 {
     app.UseForwardedHeaders(fhOptions);
-
+    Log.Logger.Debug($"debug 0");
     // Configure the HTTP request pipeline.
-    if (!app.Environment.IsProduction())
+
+    /*
+            HttpClientHandler clientHandler = new HttpClientHandler();
+            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => {
+                Log.Logger.Debug($"Catalog API CertificateCustomValidationCallback: {sender}, {cert}, {chain}, {sslPolicyErrors}  ");
+                return true; };
+            // Pass the handler to httpclient(from you are calling api)
+            HttpClient client = new HttpClient(clientHandler);
+    */
+    string pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
+    if (!string.IsNullOrEmpty(pathBase) && pathBase != "/")
     {
-/*
-        HttpClientHandler clientHandler = new HttpClientHandler();
-        clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => {
-            Log.Logger.Debug($"Catalog API CertificateCustomValidationCallback: {sender}, {cert}, {chain}, {sslPolicyErrors}  ");
-            return true; };
-        // Pass the handler to httpclient(from you are calling api)
-        HttpClient client = new HttpClient(clientHandler);
-*/
-        string pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
-        if (!string.IsNullOrEmpty(pathBase) && pathBase != "/")
+        app.UsePathBase(new PathString(pathBase));
+        Log.Logger.Debug($"Catalog API subfolder: {pathBase}  ");
+        if (!app.Environment.IsProduction())
         {
-            app.UsePathBase(new PathString(pathBase));
-            Log.Logger.Debug($"Catalog API subfolder: {pathBase}  ");
-            
+
             app.UseSwagger(c =>
             {
                 c.PreSerializeFilters.Add((swaggerDoc, httpRequest) =>
@@ -156,25 +141,40 @@ try
                     var serverUrl = $"{httpRequest.Scheme}://{httpRequest.Headers["X-Forwarded-Host"]}{basePath}";
                     swaggerDoc.Servers = new List<OpenApiServer> { new OpenApiServer { Url = serverUrl } };
                 });
-                
+
             });
             app.UseSwaggerUI();
         }
-        
-        else
+    } 
+    else
+    {
+        if (!app.Environment.IsProduction())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
-            Log.Logger.Debug($"Catalog API subfolder: Empty");
         }
+        Log.Logger.Debug($"Catalog API subfolder: Empty");
+    }
 
+    if (!app.Environment.IsProduction())
+    {
         using (IServiceScope scope = app.Services.CreateScope())
         {
+            Log.Logger.Debug($"Apply miggration.");
             scope.ServiceProvider.GetRequiredService<ProductApiContext>().Database.Migrate();
         }
-
-
+    } 
+    else
+    {
+        Log.Logger.Debug($"Swagger disabled in production mode.");
     }
+    string IsMigration = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    if (IsMigration == "Migration")
+    {
+        return;
+    }
+    
+
 
     app.UseAuthentication();
     app.UseAuthorization();

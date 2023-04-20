@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: whoamiapi  
+  name: whoamiapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: whoamiapi  
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: whoamiapi  
+    spec:
+      volumes:
+      - name: volumelogs
+        hostPath:
+          path: /mnt/logs
+
+      containers:
+      - env:
+        - name: LOG_DIR
+          value: /var/logs/
+        image: jwilder/whoami
+        imagePullPolicy: Always
+        name: whoamiapi
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+          - mountPath: /var/log
+            name: volumelogs        
+      imagePullSecrets:
+        - name: gitlab-credentials
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoamiapi
+  labels:
+    app.kubernetes.io/name: whoamiapi    
+spec:
+  ports:
+   - name: http
+     protocol: TCP
+     port: 80
+     targetPort: 8000
+  selector:
+    app.kubernetes.io/name: whoamiapi    
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whoamiapi
+#  annotations:
+#    ingress.kubernetes.io/ssl-redirect: "true"  
+
+spec:
+  tls:
+  - hosts:
+    - prod.neva.loc
+    secretName: prod-local-tls    
+  rules:
+  - http:
+      paths:
+      - path: /api   
+        pathType: Prefix
+        backend:
+          service:
+            name: whoamiapi
+            port:
+              number: 80
+            

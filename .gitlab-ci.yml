@@ -41,7 +41,7 @@ variables:
   - export NS_CATALOGAPI_PATHBASE=/catalog
   - export NS_SCHEMA=https
   - export NS_CERTS_ROOT=./srv/buildcertificate/rootca
-
+  - export PROD_BASE_URL=prod.neva.loc
 build-containers-branch:
   stage: build
   tags: 
@@ -69,6 +69,10 @@ build-containers-branch:
     - docker push  $CI_REGISTRY_IMAGE/frontend:$DOCKER_TAG
     - docker build $BuildOption --build-arg CERTS_PATH=$NS_CERTS_ROOT -t $CI_REGISTRY_IMAGE/shopmanager:$DOCKER_TAG ./src -f ./src/ShopManager/Dockerfile
     - docker push $CI_REGISTRY_IMAGE/shopmanager:$DOCKER_TAG
+#Kuber
+    
+    - docker build $BuildOption --build-arg BASE_URL=$PROD_BASE_URL --build-arg OIDC_CLIENT_SECRET=AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB --build-arg TOKEN_SERVICE_URL=$PROD_BASE_URL/identity/realms/nevashop -t $CI_REGISTRY_IMAGE/frontendprod:$DOCKER_TAG ./src -f ./src/Frontend/WebSPA/Dockerfile
+    - docker push  $CI_REGISTRY_IMAGE/frontendprod:$DOCKER_TAG
 
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule" && $CI_PIPELINE_SOURCE != "merge_request_event"

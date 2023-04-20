@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: web-nevashop
+    app: shopmanager-web
+  name: shopmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web-nevashop
+      app: shopmanager-web  
+      tier: backend
+      track: stable      
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web-nevashop
+        app: shopmanager-web  
+        tier: backend
+        track: stable      
+    spec:
+      volumes:
+      - name: volumelogs
+        hostPath:
+          path: /mnt/logs
+
+      containers:
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Production
+        - name: ConnectionStrings__DefaultConnection
+          value: Host=192.168.0.33;Port=5432;Database=nsshopmanager;Username=postgres;Password=postgres
+        - name: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+          value: "true"
+        - name: ASPNETCORE_PATHBASE
+          value: /admin
+        - name: ApiSettings__CatalogUrl
+          value: "https://prod.neva.loc/catalog/"
+        - name: ApiSettings__CatalogHost_EXTERNAL
+          value: "https://prod.neva.loc/catalog/"
+
+        image: gitlab.neva.loc:5050/shop/nevashop/shopmanager:latest
+        imagePullPolicy: Always
+        name: prod-shopmanager
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /logs 
+            name: volumelogs        
+      imagePullSecrets:
+        - name: gitlab-credentials
+      initContainers:
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Migration
+        - name: ConnectionStrings__DefaultConnection
+          value: Host=192.168.0.33;Port=5432;Database=nsshopmanager;Username=postgres;Password=postgres
+        name: init-shopmanager
+        image: gitlab.neva.loc:5050/shop/nevashop/shopmanager:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /logs 
+            name: volumelogs        
+      imagePullSecrets:
+        - name: gitlab-credentials
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shopmanager
+  labels:
+    app: shopmanager-web
+spec:
+#  type: LoadBalancer
+  ports:
+   - name: http
+     protocol: TCP
+     port: 80
+     targetPort: 80
+  selector:
+   app: shopmanager-web    
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shopmanagerls
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "true"  
+
+spec:
+  tls:
+  - hosts:
+#    - shop.neva.cloudns.nz
+#    secretName: prod-ext-tls
+    - prod.neva.loc
+    secretName: prod-local-tls
+
+  rules:
+  - http:
+      paths:
+      - path: /admin   
+        pathType: Prefix
+        backend:
+          service:
+            name: shopmanager
+            port:
+              number: 80
+            

@@ -77,11 +77,11 @@ services:
       - 80:80
       - 443:443
     volumes:  
-      - ./Frontend/WebSPA/nginx/default.conf.template:/etc/nginx/templates/default.conf.template
-      - ./Frontend/WebSPA/nginx/security.conf:/etc/nginx/security.conf
-      - ./Frontend/WebSPA/nginx/proxy.conf:/etc/nginx/proxy.conf
-      - ./srv/nginx/certs/host.docker.internal.crt:/etc/nginx/certs/https.crt
-      - ./srv/nginx/certs/host.docker.internal.key:/etc/nginx/certs/key.key
+      - ./srv/nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ./srv/nginx/conf/security.conf:/etc/nginx/security.conf
+      - ./srv/nginx/conf/proxy.conf:/etc/nginx/proxy.conf
+      - ./srv/nginx/certs/host.docker.internal.crt:/etc/nginx/certs/host.docker.internal.crt
+      - ./srv/nginx/certs/host.docker.internal.key:/etc/nginx/certs/host.docker.internal.key
       - ${NS_LOG_PATH:-./logs}:/var/logs
 
   whoamiapi:

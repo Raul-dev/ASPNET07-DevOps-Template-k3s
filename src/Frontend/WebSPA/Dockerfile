@@ -17,6 +17,9 @@ FROM nginx:stable-alpine
 COPY --from=build /app/build /usr/share/nginx/html
 RUN mkdir -p /usr/share/nginx/html/ref/
 COPY Frontend/WebSPA/nginx/links.html /usr/share/nginx/html/ref/index.html
+      
+COPY srv/nginx/conf/security.conf /etc/nginx/security.conf
+COPY srv/nginx/conf/proxy.conf /etc/nginx/proxy.conf
 
 EXPOSE 80
 EXPOSE 443

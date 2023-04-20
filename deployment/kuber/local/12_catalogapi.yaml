@@ -40,7 +40,6 @@ spec:
           value: "http://keycloak:8080/identity/realms/nevashop"
         - name: IdentityS4Settings__IssuerURL
           value: "https://prod.neva.loc/identity/realms/nevashop"
-        name: myapp-container
         image: gitlab.neva.loc:5050/shop/nevashop/catalogapi:latest
         imagePullPolicy: Always
         name: prod-catalogapi

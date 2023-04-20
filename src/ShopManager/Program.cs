@@ -91,15 +91,17 @@ try
 {
     var app = builder.Build();
     AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-    using (IServiceScope scope = app.Services.CreateScope())
-    {
-        scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
-    }
-
+    Log.Logger.Debug($"Shop manager builder.Build()");
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
+    if (!app.Environment.IsProduction())
     {
-        app.UseMigrationsEndPoint();
+
+        using (IServiceScope scope = app.Services.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+        }
+
+        //app.UseMigrationsEndPoint();
     }
     else
     {
@@ -107,30 +109,38 @@ try
         // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
         //app.UseHsts();
     }
-
+    Log.Logger.Debug($"Debug0");
+    string IsMigration = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    if (IsMigration == "Migration")
+    {
+        return;
+    }
     //app.UseHttpsRedirection();
     string pathBase = Environment.GetEnvironmentVariable("ASPNETCORE_PATHBASE");
 
     if (!string.IsNullOrEmpty(pathBase) && pathBase != "/")
     {
+        Log.Logger.Debug($"Shop manager subfolder: {pathBase}");
         app.UseStaticFiles(new PathString(pathBase));
         app.UsePathBase(new PathString(pathBase));
-        Log.Logger.Debug($"Shop manager subfolder: {pathBase}");
+
+
 
     }
     else
     {
-        app.UseStaticFiles();
         Log.Logger.Debug($"Shop manager subfolder: Empty");
+        app.UseStaticFiles();
+
     }
 
 
 
     app.UseRouting();
-
+    Log.Logger.Debug($"Debug1");
     app.UseAuthentication();
     app.UseAuthorization();
-
+    Log.Logger.Debug($"Debug2");
     app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}");

@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoamiapi
+  labels:
+    app.kubernetes.io/name: whoamiapi 
+spec:
+  ports:
+   - name: http
+     protocol: TCP
+     port: 80
+     targetPort: 8000
+  selector:
+    app.kubernetes.io/name: whoamiapi   
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whoamiapi
+#  annotations:
+#    ingress.kubernetes.io/ssl-redirect: "true"  
+
+spec:
+  tls:
+  - hosts:
+    - prod.neva.loc
+    secretName: prod-local-tls    
+  rules:
+  - http:
+      paths:
+      - path: /api   
+        pathType: Prefix
+        backend:
+          service:
+            name: whoamiapi
+            port:
+              number: 80
+            
