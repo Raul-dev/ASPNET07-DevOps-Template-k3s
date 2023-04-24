@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "catalogapi.fullname" . }}
+  labels:
+    {{- include "catalogapi.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "catalogapi.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "catalogapi.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "catalogapi.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+      - name: volumelogs
+        hostPath:
+          path: {{ .Values.MountLogsPath }}               
+      containers:
+        - env:
+          - name: ASPNETCORE_ENVIRONMENT
+            value: Production
+          - name: ConnectionStrings__DefaultConnection
+            value: {{ .Values.ConnectionStrings__DefaultConnection }}
+          - name: ASPNETCORE_PATHBASE
+            value: /catalog       
+          - name: IdentityS4Settings__Secret
+            value: {{ .Values.IdentityS4Settings__Secret }}
+          - name: IdentityS4Settings__AuthorityURL
+            value: {{ .Values.IdentityS4Settings__AuthorityURL }}
+          - name: IdentityS4Settings__IssuerURL
+            value: {{ .Values.IdentityS4Settings__IssuerURL }}
+          name: prod-{{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+#          livenessProbe:
+#            httpGet:
+#              path: /catalog
+#              port: http
+#          readinessProbe:
+#            httpGet:
+#              path: /catalog
+#              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      initContainers:
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Migration
+        - name: ConnectionStrings__DefaultConnection
+          value: {{ .Values.ConnectionStrings__DefaultConnection }}
+        name: init-{{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /logs 
+            name: volumelogs        
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
