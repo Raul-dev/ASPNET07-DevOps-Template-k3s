@@ -1,0 +1,66 @@
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elk-data-pv-volume
+  labels:
+    type: local
+    app.kubernetes.io/name: elasticsearch
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/elk/data"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elk-master-pv-volume
+  labels:
+    type: local
+    app.kubernetes.io/name: elasticsearch
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/elk/master"    
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: elk-master-pv-claim
+  labels:
+    type: local
+    app.kubernetes.io/name: elasticsearch
+  annotations:
+    volume.alpha.kubernetes.io/storage-class: manual
+spec:
+  storageClassName: manual
+  volumeName: elk-master-pv-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi      
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: elk-data-pv-claim
+  labels:
+    type: local
+    app.kubernetes.io/name: elasticsearch
+spec:
+  storageClassName: manual
+  volumeName: elk-data-pv-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi            

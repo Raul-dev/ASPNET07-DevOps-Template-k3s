@@ -10,9 +10,24 @@ variables:
   KUBE_CONTEXT: "shop/nevashop:prod"
   GIT_SSL_NO_VERIFY: "true"
 
+#For container: bitnami/kubectl:1.21
 .kube-context:
   before_script:
     - if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi
+
+#For container: alpine/helm:3.11.2
+.kubehelm-context:
+  before_script:
+    - echo $KUBE_CONFIG
+    # $KUBE_CONFIG is Empty
+    #- mkdir -p /root/.kube
+    #- echo $KUBE_CONFIG | base64 -d > /root/.kube/config    
+    # Install kubectl
+    - apk add curl
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/bin/kubectl
+    - if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi   
 
 .deploy-script: &deploy-script
   - docker-compose -f ./deployment/gitlabci/docker-compose.misc.yml up -d 
@@ -41,7 +56,7 @@ variables:
   - export NS_CATALOGAPI_PATHBASE=/catalog
   - export NS_SCHEMA=https
   - export NS_CERTS_ROOT=./srv/buildcertificate/rootca
-  - export PROD_BASE_URL=prod.neva.loc
+  - export PROD_BASE_URL=$PROD_BASE_URL
 build-containers-branch:
   stage: build
   tags: 
@@ -62,8 +77,9 @@ build-containers-branch:
     # Container IP. TODO get external IP
     #- export ADDRESS_IP=$(ip -f inet addr show eth0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
     #- export ADDRESS_IP=$(/sbin/ip route|awk '/default/ { print $3 }')
-    - ADDRESS_IP=192.168.0.45
+    
     - echo ${ADDRESS_IP}
+    - cp ./src/Frontend/WebSPA/nginx/links.html linksprod.html
     - sed 's/127.0.0.1/'$ADDRESS_IP'/g' ./src/Frontend/WebSPA/nginx/links.html > links.html && mv links.html ./src/Frontend/WebSPA/nginx/links.html
     - docker build $BuildOption --build-arg BASE_URL=$NS_BASE_URL --build-arg OIDC_CLIENT_SECRET=AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB --build-arg TOKEN_SERVICE_URL=$NS_BASE_URL/identity/realms/nevashop -t $CI_REGISTRY_IMAGE/frontend:$DOCKER_TAG ./src -f ./src/Frontend/WebSPA/Dockerfile
     - docker push  $CI_REGISTRY_IMAGE/frontend:$DOCKER_TAG
@@ -71,6 +87,8 @@ build-containers-branch:
     - docker push $CI_REGISTRY_IMAGE/shopmanager:$DOCKER_TAG
 #Kuber
     
+    - echo ${ADDRESS_IP_PROD}
+    - sed 's/127.0.0.1/'$ADDRESS_IP_PROD'/g' linksprod.html > links.html && mv links.html ./src/Frontend/WebSPA/nginx/links.html
     - docker build $BuildOption --build-arg BASE_URL=$PROD_BASE_URL --build-arg OIDC_CLIENT_SECRET=AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB --build-arg TOKEN_SERVICE_URL=$PROD_BASE_URL/identity/realms/nevashop -t $CI_REGISTRY_IMAGE/frontendprod:$DOCKER_TAG ./src -f ./src/Frontend/WebSPA/Dockerfile
     - docker push  $CI_REGISTRY_IMAGE/frontendprod:$DOCKER_TAG
 
@@ -119,34 +137,62 @@ destroy-deployed-branch:
     - docker-compose -f ./deployment/gitlabci/docker-compose.elk.yml down
 
 k3s-deployment:
-  extends: [.kube-context]
+  extends: [.kubehelm-context]
   stage: deploy
   when: manual
   image:
-    name: bitnami/kubectl:1.21
+    name: alpine/helm:3.11.2
     entrypoint: [""]
   tags: 
     - $RUNNER_NAME  
-    
+
   script:
     - kubectl config get-contexts
-    - kubectl get pods --all-namespaces --insecure-skip-tls-verify
-    - ls
-    #- kubectl get pods --all-namespaces 
-    - kubectl apply -f ./deployment/kuber/11_whoamiapi.yaml --insecure-skip-tls-verify
+    - kubectl get pods --insecure-skip-tls-verify
+    - helm version
+    - echo $PROD_SECRET_TLS
+    - > 
+        helm upgrade --atomic --install --kube-insecure-skip-tls-verify 
+        --set ingress.hosts[0].host=$PROD_BASE_URL
+        --set "ingress.tls[0].hosts={$PROD_BASE_URL}"
+        --set ingress.tls[0].secretName=$PROD_SECRET_TLS
+        whoamiapi ./deployment/kuber/whoamiapi/ -f ./deployment/kuber/valueswhoamiapi.yaml
+    - kubectl get ing whoamiapi -o yaml --insecure-skip-tls-verify
+    - > 
+        helm upgrade --atomic --install --kube-insecure-skip-tls-verify 
+        --set ingress.hosts[0].host=$PROD_BASE_URL
+        --set "ingress.tls[0].hosts={$PROD_BASE_URL}"
+        --set ingress.tls[0].secretName=$PROD_SECRET_TLS
+        --set IdentityS4Settings__IssuerURL="https://$PROD_BASE_URL/identity/realms/nevashop"
+        catalogapi ./deployment/kuber/catalogapi/ -f ./deployment/kuber/valuescatalogapi.yaml
+    - > 
+        helm upgrade --atomic --install --kube-insecure-skip-tls-verify 
+        --set ingress.hosts[0].host=$PROD_BASE_URL
+        --set "ingress.tls[0].hosts={$PROD_BASE_URL}"
+        --set ingress.tls[0].secretName=$PROD_SECRET_TLS
+        shopmanager ./deployment/kuber/shopmanager/ -f ./deployment/kuber/valuesshopmanager.yaml
+    - > 
+        helm upgrade --atomic --install --kube-insecure-skip-tls-verify 
+        --set ingress.hosts[0].host=$PROD_BASE_URL
+        --set "ingress.tls[0].hosts={$PROD_BASE_URL}"
+        --set ingress.tls[0].secretName=$PROD_SECRET_TLS
+        frontend ./deployment/kuber/frontend/ -f ./deployment/kuber/valuesfrontend.yaml
+
 
 k3s-destroy-deployed-branch:
-  extends: [.kube-context]
+  extends: [.kubehelm-context]
   stage: build
   when: manual
   image:
-    name: bitnami/kubectl:1.21
+    name: alpine/helm:3.11.2
     entrypoint: [""]
   tags: 
     - $RUNNER_NAME  
-    
+   
   script:
     - kubectl config get-contexts
     - kubectl get pods --all-namespaces --insecure-skip-tls-verify
-    #- kubectl get pods --all-namespaces 
-    - kubectl delete -f ./deployment/kuber/11_whoamiapi.yaml --insecure-skip-tls-verify
+    - helm delete --kube-insecure-skip-tls-verify whoamiapi
+    - helm delete --kube-insecure-skip-tls-verify catalogapi
+    - helm delete --kube-insecure-skip-tls-verify shopmanager
+    - helm delete --kube-insecure-skip-tls-verify frontend

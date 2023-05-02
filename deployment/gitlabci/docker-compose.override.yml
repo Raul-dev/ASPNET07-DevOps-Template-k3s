@@ -63,8 +63,8 @@ services:
       - /srv/nginx/default.conf.template:/etc/nginx/templates/default.conf.template
       - /srv/nginx/security.conf:/etc/nginx/security.conf
       - /srv/nginx/proxy.conf:/etc/nginx/proxy.conf
-      - /srv/nginx/certssso/ubuntu22.neva.loc.crt:/etc/nginx/certs/https.crt
-      - /srv/nginx/certssso/ubuntu22.neva.loc.key:/etc/nginx/certs/key.key
+      - /srv/nginx/certssso/ubuntu22.neva.loc.crt:/etc/nginx/certs/ubuntu22.neva.loc.crt
+      - /srv/nginx/certssso/ubuntu22.neva.loc.key:/etc/nginx/certs/ubuntu22.neva.loc.key
       - ${NS_LOG_PATH:-./logs}/nginx:/var/logs
     depends_on:
       - shopmanager

@@ -66,7 +66,8 @@ https://host.docker.internal/catalog/swagger - CatalogAPI swagger
 </p>
 
 ## GitLab CI/CD compose files in folder ./deployment/gitLabci/
-Build machine: https://ubuntu22.neva.loc
+Build machine docker: https://ubuntu22.neva.loc
+Production machine kubernates: https://prod.neva.loc
 
 GitLab Docker Runner setup
 ```

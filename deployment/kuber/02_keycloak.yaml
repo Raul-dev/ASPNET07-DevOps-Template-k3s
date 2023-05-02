@@ -1,0 +1,124 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+#  - name: https
+#    port: 8443
+#    targetPort: 8443
+  selector:
+    app: keycloak
+#  type: LoadBalancer
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+#        image: quay.io/keycloak/keycloak:16.0.0
+        image: quay.io/keycloak/keycloak:21.0.2
+        args: ["start-dev --import-realm"]
+
+        env:
+        - name: KEYCLOAK_ADMIN
+          value: "admin"
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        - name: KC_HOSTNAME
+          value: shop.neva.cloudns.nz 
+        - name: KC_HTTPS_CERTIFICATE_FILE                             
+          value: /srv/cert/shop.neva.cloudns.nz.crt
+        - name: KC_HTTPS_CERTIFICATE_KEY_FILE
+          value: /srv/cert/shop.neva.cloudns.nz.key
+        - name: KC_PROXY
+          value: "edge"     
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_HTTP_RELATIVE_PATH
+          value: /identity/
+        - name: KC_HOSTNAME_STRICT
+          value: "false"   
+        - name: MAINPAGE_SPA_SECRET
+          value: "AGVacqRHpG5PXbUXpaQ0kKiXartkh5LB"
+        - name: SWAGGER_CATALOG_API_CLIENT_SECRET
+          value: "pNaXyvOVBwzgYqDfB2NDGbfl1iUg8tIP"
+        - name: MAINPAGE_BASE_URL
+          value: https://shop.neva.cloudns.nz/
+        - name: KC_FEATURES
+          value: "'token-exchange scripts'"          
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        volumeMounts:
+          - name: keycloak-tls-volume
+            mountPath: /srv/cert
+            readOnly: true
+          - name: keycloak-volume
+            mountPath: /opt/keycloak/data/import                  
+
+#        readinessProbe:
+#          httpGet:
+#            path: /realms/master
+#            port: 8080
+#          initialDelaySeconds: 120
+      volumes:
+      - name: keycloak-tls-volume
+        hostPath:
+          path: /srv/nginx/certssso
+          type: DirectoryOrCreate           
+      - name: keycloak-volume
+        hostPath:
+          path: /srv/sso
+          type: DirectoryOrCreate
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+#    traefik.ingress.kubernetes.io/router.pathmatcher: /identity
+#    nginx.ingress.kubernetes.io/app-root: /identity
+spec:
+  tls:
+    - hosts:
+      - shop.neva.cloudns.nz
+      secretName: prod-ext-tls      
+  rules:
+  - host: shop.neva.cloudns.nz
+#    rule: "Host('shop.neva.cloudns.nz') && Path('/identity')"
+    http:
+      paths:
+      - path: /identity
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: 8080
