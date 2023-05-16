@@ -67,9 +67,10 @@ namespace ShopManager.Services
             // If the API call fails, call it again according to the re-try policy
             // specified in Startup.cs
             string uri = _remoteServiceBaseUrl + "/tree";
+            Log.Debug("GetCatalogTree: {0}", uri);
             //var result = await client.GetAsync(uri);
             var result = await _httpClient.GetAsync(uri);
-
+            Log.Debug("GetCatalogTree result : {0}", result.ToString());
             if (result.IsSuccessStatusCode)
             {
                 // Read all of the response and deserialise it into an instace of

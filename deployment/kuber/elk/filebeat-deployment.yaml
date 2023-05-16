@@ -1,0 +1,148 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  labels:
+    k8s-app: filebeat
+data:
+  filebeat.yml: |-
+    filebeat.config:
+      inputs:
+        # Mounted `filebeat-inputs` configmap:
+        path: ${path.config}/inputs.d/*.yml
+        # Reload inputs configs as they change:
+        reload.enabled: false
+      modules:
+        path: ${path.config}/modules.d/*.yml
+        # Reload module configs as they change:
+        reload.enabled: false
+
+    processors:
+      - add_cloud_metadata:
+
+    cloud.id: ${ELASTIC_CLOUD_ID}
+    cloud.auth: ${ELASTIC_CLOUD_AUTH}
+
+    output.logstash:
+      hosts:  ['${LOGSTASH_HOST:logstash}:${LOGSTASH_PORT:5044}']
+#    output.elasticsearch:
+#      hosts: ['${ELASTICSEARCH_HOST:elasticsearch}:${ELASTICSEARCH_PORT:9200}']
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-inputs
+  labels:
+    k8s-app: filebeat
+data:
+  kubernetes.yml: |-
+    - type: log
+      scan_frequency: 1s
+      enabled: true
+      paths:
+        - /logs/*.*
+      fields:
+        tags: ['json']
+      fields_under_root: true
+
+#    - type: docker
+#      containers.ids:
+#      - "*"
+#      processors:
+#        - add_kubernetes_metadata:
+#            in_cluster: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: filebeat
+  name: filebeat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: filebeat
+  template:
+    metadata:
+      labels:
+        k8s-app: filebeat
+    spec:
+      volumes:
+      - name: volumelogs
+        hostPath:
+          path: /mnt/logs
+      - name: config
+        configMap:
+          defaultMode: 0600
+          name: filebeat-config
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: inputs
+        configMap:
+          defaultMode: 0600
+          name: filebeat-inputs
+      - name: data
+        emptyDir: {}          
+      containers:
+      - env:
+        - name: LOGSTASH_HOST
+          value: logstash.efk.svc.cluster.local
+        - name: LOGSTASH_PORT
+          value: "5044"      
+        - name: ELASTICSEARCH_HOST
+          value: elasticsearch.efk.svc.cluster.local
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+#        - name: ELASTICSEARCH_USERNAME
+#          value: elastic
+#        - name: ELASTICSEARCH_PASSWORD
+#          value: changeme
+        - name: ELASTIC_CLOUD_ID
+          value:
+        - name: ELASTIC_CLOUD_AUTH
+          value:
+        securityContext:
+          runAsUser: 0
+        args: [
+          "-c", "/etc/filebeat.yml",
+          "-e", "-strict.perms=false",
+        ]
+        image: elastic/filebeat:8.6.2
+        imagePullPolicy: Always
+        name: filebeat
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: volumelogs  
+            mountPath: /logs 
+          - name: config
+            mountPath: /etc/filebeat.yml
+            readOnly: true
+            subPath: filebeat.yml
+          - name: inputs
+            mountPath: /usr/share/filebeat/inputs.d
+            readOnly: true
+          - name: data
+            mountPath: /usr/share/filebeat/data
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+            readOnly: true
+
+#      username: ${ELASTICSEARCH_USERNAME}
+#      password: ${ELASTICSEARCH_PASSWORD}
+
+#filebeat.inputs:
+#- type: log
+#  scan_frequency: 1s
+#  enabled: true
+#  paths:
+#    - /src/logs/*.*
+#  fields:
+#    tags: ['json']
+#  fields_under_root: true
+#output.logstash:
+#  hosts: ["logstash:5044"]

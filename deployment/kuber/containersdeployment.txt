@@ -1,0 +1,236 @@
+Spec: https://doc.traefik.io/traefik/routing/routers/#entrypoints
+Spec: https://habr.com/ru/companies/nixys/articles/427655/
+dashboard https://doc.traefik.io/traefik/getting-started/install-traefik/
+kubectl port-forward $(kubectl get pods --selector "app.kubernetes.io/name=traefik" -n kube-system --output=name) 9000:9000 -n kube-system
+http://127.0.0.1:9000/dashboard/
+
+kubectl get all --all-namespaces
+
+sudo chmod 644 /srv/nginx/certssso/prod.neva.loc.key
+sudo chmod 644 /srv/nginx/certssso/privkey.key
+
+1) catalogapi
+Use initContainers
+kubectl describe pod catalogapi-65bcddbd85-rwbf4
+kubectl logs catalogapi-65bcddbd85-rwbf4 -c init-catalogapi
+
+2)  kubectl delete -f 02_keyclock.yaml
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install my-release bitnami/keycloak
+
+    volumes:
+      - ./srv/sso/realm.json:/opt/keycloak/data/import/realm.json
+
+https://gist.github.com/pedroigor/e1476a41b544d15c1bd59155aad4f6ad
+
+keycloak pod status is running but not getting ready
+
+kubectl apply -f keycloak2.yaml
+kubectl get all --all-namespaces
+kubectl describe pod keycloak-5b79db847b-bsstc
+kubectl logs keycloak-5b79db847b-bsstc
+http://192.168.0.39:8080
+http://prod.neva.loc/identity
+http://localhost:8080/auth/realms/master
+
+base instalation https://www.keycloak.org/getting-started/getting-started-kube
+kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak.yaml
+
+
+kubectl apply -f ./local/11_whoamiapi.yaml
+kubectl apply -f ./local/12_catalogapi.yaml
+kubectl apply -f ./local/15_frontend.yaml
+kubectl apply -f ./local/16_shopmanager.yaml
+
+kubectl delete -f ./local/11_whoamiapi.yaml
+kubectl delete -f ./local/12_catalogapi.yaml
+kubectl delete -f ./local/15_frontend.yaml
+kubectl delete -f ./local/16_shopmanager.yaml
+
+debug
+kubectl get deploy whoamiapi -o yaml
+kubectl get svc whoamiapi -o yaml
+kubectl apply -f ./local/11_whoamiapiing.yaml
+
+Основы работы с Helm чартами и темплейтами — Часть 1
+https://habr.com/ru/articles/547682/
+https://jhooq.com/helm-pass-environment-variables/
+
+
+helm create whoamiapi
+helm install whoamiapi --set ingress.tls.secretName=prod-local-tls --set ingress.hosts.host=prod.neva.loc  ./whoamiapi/ -f valueswhoamiapi.yaml --dry-run --debug
+
+
+ingress.hosts.host
+ingress.tls.hosts
+
+helm install whoamiapi ./whoamiapi/ -f valueswhoamiapi.yaml  --dry-run --debug
+helm upgrade --atomic --install --set ingress.hosts[0].host="shop.neva.cloudns.nz" --set "ingress.tls[0].hosts={shop.neva.cloudns.nz}" --set ingress.tls[0].secretName="prod-ext-tls" whoamiapi ./whoamiapi/ -f valueswhoamiapi.yaml
+helm upgrade --atomic --install --set ingress.hosts.host="shop.neva.cloudns.nz" --set ingress.tls[0].secretName="prod-ext-tls"   whoamiapi ./whoamiapi/ -f valueswhoamiapi.yaml
+--set-string
+потом upgrade
+helm delete whoamiapi
+
+helm create catalogapi
+upgrade
+helm install catalogapi ./catalogapi/ -f valuescatalogapi.yaml --dry-run --debug
+helm delete catalogapi
+
+helm create shopmanager
+helm install shopmanager ./shopmanager/ -f valuesshopmanager.yaml  --dry-run --debug
+helm create shopmanager
+
+helm create frontend
+helm install frontend ./frontend/ -f valuesfrontend.yaml  --dry-run --debug
+helm delete frontend
+
+    
+prod-local-tls prod.neva.loc
+prod-ext-tls shop.neva.cloudns.nz
+kubectl delete -f ./02_keycloak.yaml
+kubectl apply -f ./02_keycloak.yaml
+
+
+https://habr.com/ru/articles/569124/
+Установка Elastic Search
+Создаем namespace efk в Kubernetes:
+kubectl delete -n efk persistentvolumeclaim elasticsearch-master-elasticsearch-master-0
+Чтобы разобраться с Fluentd я использовал несколько материалов:
+
+Установка Fluentd
+Чтобы разобраться с Fluentd я использовал несколько материалов:
+
+Kubernetes Logging with Elasticsearch, Fluentd and Kibana  https://coralogix.com/blog/kubernetes-logging-with-elasticsearch-fluentd-and-kibana/
+Cluster-level Logging in Kubernetes with Fluentd  https://medium.com/kubernetes-tutorials/cluster-level-logging-in-kubernetes-with-fluentd-e59aa2b6093a
+https://medium.com/@thulasya/deploy-elasticsearch-on-kubernetes-via-helm-in-google-kubernetes-cluster-da722f3a8883
+helm install — name kibana elastic/kibana — set elasticsearchHosts=http://elasticsearch-client-headless.default.svc.cluster.local:9200
+
+1) не работает pull c официального сервера
+ kubectl create namespace efk
+Добавляем репозиторий:
+2)helm repo add elastic https://helm.elastic.co
+Обновляем список чартов:
+3)helm repo update
+Скачиваем хелм вручную используя прокси, так как elasticsearch заблокирован для России
+https://helm.elastic.co/helm/elasticsearch/elasticsearch-8.5.1.tgz
+helm install elasticsearch elastic/elasticsearch --namespace efk --set volumeClaimTemplate.resources.requests.storage=5Gi --set replicas=1 --set minimumMasterNodes=1 
+helm delete elasticsearch --namespace efk
+
+https://github.com/bitnami/azure-marketplace-charts/tree/main/bitnami/elasticsearch
+Пробуем bitnami
+
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+      https://www.elastic.co/guide/en/elasticsearch/reference/current/file-descriptors.html
+      https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html
+    This chart uses a privileged initContainer to change those settings in the Kernel
+    by running: sysctl -w vm.max_map_count=262144 && sysctl -w fs.file-max=65536      
+sudo sysctl -w vm.max_map_count=262144 && sudo sysctl -w fs.file-max=65536
+нужно создавать secret c именем
+{{- $secretName := printf "%s-tls" .Values.ingest.ingress.hostname }}
+
+helm install elasticsearch bitnami/elasticsearch --namespace efk --set replicas=1 --set minimumMasterNodes=1 --set global.kibanaEnabled=false --set security.tls.master.existingSecret=prod-ext-tls --set kibana.tls.enabled=true --set kibana.tls.existingSecret=prod-ext-tls
+
+helm install elasticsearch bitnami/elasticsearch -f valueselk.yaml --set kibana.ingress.enabled=true --set kibana.ingress.hostname=shop.neva.cloudns.nz --set kibana.tls.enabled=true --set kibana.tls.existingSecret=prod-ext-tls -n efk
+helm upgrade --install elasticsearch bitnami/elasticsearch -f valueselk.yaml --set kibana.ingress.enabled=true --set kibana.ingress.hostname=shop.neva.cloudns.nz --namespace efk
+helm install elasticsearch-kibana bitnami/kibana --set elasticsearch.hosts[0]=elasticsearch --set elasticsearch.port=9200 
+kibana.elasticsearch.hosts
+https://shop.neva.cloudns.nz/elk
+
+kubectl apply -f kibanaingres.yaml  --namespace efk
+helm delete elasticsearch --namespace efk
+
+prod-local-tls prod.neva.loc
+prod-ext-tls shop.neva.cloudns.nz
+
+Setup kibana subpath
+server.basePath
+Enables you to specify a path to mount Kibana at if you are running behind a proxy. Use the server.rewriteBasePath setting to tell Kibana if it should remove the basePath from requests it receives, and to prevent a deprecation warning at startup. This setting cannot end in a slash (/).
+server.publicBaseUrl
+The publicly available URL that end-users access Kibana at. Must include the protocol, hostname, port (if different than the defaults for http and https, 80 and 443 respectively), and the server.basePath (if configured). This setting cannot end in a slash (/).
+
+
+ingress.enabled	Enable ingress controller resource	false
+ingress.pathType	Ingress Path type	ImplementationSpecific
+ingress.apiVersion	Override API Version (automatically detected if not set)	""
+ingress.hostname	Default host for the ingress resource. If specified as "*" no host rule is configured	kibana.local
+ingress.path
+
+
+tls:
+  ## @param tls.enabled Enable SSL/TLS encryption for Kibana server (HTTPS)
+  ##
+  enabled: false
+  ## @param tls.autoGenerated Create self-signed TLS certificates. Currently only supports PEM certificates.
+  ##
+  autoGenerated: false
+  ## @param tls.existingSecret Name of the existing secret containing Kibana server certificates
+  ##
+  existingSecret: ""
+
+  0) sudo kubectl create secret tls prod-ext-tls --key privkey.key --cert cert.crt -n efk
+  sudo kubectl create secret tls shop.neva.cloudns.nz-tls --key privkey.key --cert cert.crt -n efk
+  1)
+  a) helm install elasticsearch bitnami/elasticsearch -f valueselk.yaml --set kibana.ingress.enabled=true --set kibana.ingress.hostname=shop.neva.cloudns.nz --set kibana.tls.enabled=true --set kibana.tls.existingSecret=prod-ext-tls -n efk
+   b) helm install elasticsearch bitnami/elasticsearch -f valueselk.yaml --set kibana.ingress.enabled=true --set kibana.ingress.hostname=shop.neva.cloudns.nz --set kibana.tls.enabled=true --set kibana.tls.existingSecret=prod-ext-tls -n efk
+   c) tls=false
+   helm install elasticsearch bitnami/elasticsearch --set kibanaEnabled --set kibana.ingress.enabled=true --set kibana.ingress.hostname=shop.neva.cloudns.nz --set kibana.tls.enabled=false -n efk
+
+   https://www.shebanglabs.io/logging-with-efk-on-aws-eks/
+
+helm delete elasticsearch --namespace efk
+helm install elasticsearch bitnami/elasticsearch -f valueselk.yaml -n efk
+helm upgrade elasticsearch bitnami/elasticsearch -f valueselk.yaml -n efk
+kubectl port-forward --namespace efk svc/elasticsearch 9200:9200 &
+curl http://127.0.0.1:9200/
+curl http://localhost:9200/_cluster/state?pretty
+curl -XGET 'localhost:9200/'
+curl --request DELETE 'http://localhost:9200/.kibana*'
+helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch --set elasticsearch.port=9200
+helm upgrade kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch --set elasticsearch.port=9200
+helm delete kibana --namespace efk
+kubectl port-forward svc/kibana 8080:5601 -n efk
+  echo "Visit http://127.0.0.1:8080 to use your application"
+
+  --set image.tag=8.6.2-debian-11-r3
+  registry: docker.io
+  repository: bitnami/kibana
+  tag: 8.6.2-debian-11-r3
+  
+  refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-eval'". Either the 'unsafe-inline' keyword, a hash ('sha256-P5polb1UreUSOe5V/Pv7tc+yeZuJXiOi/3fqhGsU7BE='), or a nonce ('nonce-...') is required to enable inline execution.
+
+https://www.elastic.co/blog/small-medium-or-large-scaling-elasticsearch-and-evolving-the-elastic-stack-to-fit
+вручную:
+https://www.8host.com/blog/ustanovka-steka-efk-na-kubernetes/
+
+kubectl apply -f kibana-deployment.yaml -n efk
+
+https://stackoverflow.com/questions/54990661/running-elasticsearch-and-kibana-on-k8s-error-kibana-did-not-load-properly-ch
+ kubectl get services elasticsearch -o wide -n efk
+ 10.43.229.245
+ kubectl delete -f kibana-deployment.yaml -n efk
+ kubectl apply -f kibana-pod.yaml -n efk
+ 
+ https://linuxhint.com/kibana-server-not-ready-yet/
+ curl -XGET "http://localhost:9200/_cat/indices?v&index=.kib*&h=index"
+
+curl -XPUT "http://localhost:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
+{
+  "persistent" : {
+    "action.destructive_requires_name" : false
+  }
+}'
+
+curl -XDELETE "http://localhost:9200/.kibana*?expand_wildcards=open"
+curl -XGET "http://localhost:9200/_cat/indices?v&index=.kib*&h=index"
+kubectl delete pod kibana -n efk
+kubectl delete pod elasticsearch -n efk
+
+kubectl apply -f elasticsearch-pod.yaml -n efk
+kubectl apply -f kibana-pod.yaml -n efk
+kubectl port-forward --namespace efk svc/elasticsearch 9200:9200 
+helm install elasticsearch bitnami/elasticsearch -f valueselk.yaml -n efk
+helm delete elasticsearch -n efk
+kubectl logs elasticsearch-data-0 -c sysctl -n efk
+helm install elasticsearch bitnami/elasticsearch -n efk
+helm test elasticsearch

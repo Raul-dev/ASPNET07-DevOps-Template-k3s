@@ -57,8 +57,8 @@ namespace CatalogApi.Extensions
 
             Log.Logger.Debug($"Environment ASPNETCORE_ENVIRONMENT: {env}");
 
-            if (!builder.Environment.IsProduction())
-            {
+            //if (!builder.Environment.IsProduction())
+            //{
                 string connection = builder.Configuration.GetConnectionString("DefaultConnection");
                 if (!string.IsNullOrEmpty(connection))
                 {
@@ -78,7 +78,7 @@ namespace CatalogApi.Extensions
                     if (match.Groups.Count != 0 && matchDatabase.Groups.Count != 0)
                         Log.Logger.Debug("Postgres DB setup: {0}, {1}{2}.", match.Groups[0].Value, matchDatabase.Groups[0].Value, strPort);
                 }
-            }
+            //}
 
             return builder;
         }

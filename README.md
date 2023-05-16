@@ -7,16 +7,16 @@ this is a sample development environment for microservice application
 - C# 10.0 with ASP.NET CORE 7.0 
 - create-react-app with typescript
 - Nginx proxy
-- GitLab CI/CD
+- GitLab CI/CD docker QA
 - PostgreSQL DB
 - ELK (Elasticsearch, Logstash, Kibana)
-- Kubernates (k3s) production GitLab CI/CD deployment 
+- Kubernates (k3s) production GitLab CI/CD Helm 
 - Powershell
 
 ## Start project localy
 for Windows
 Prerequisites:
-- install [openssl](https://thesecmaster.com/procedure-to-install-openssl-on-the-windows-platform/)
+- Install [openssl](https://thesecmaster.com/procedure-to-install-openssl-on-the-windows-platform/)
   used version: OpenSSL 3.0.7 1 Nov 2022 (Library: OpenSSL 3.0.7 1 Nov 2022)
 ```
 
@@ -106,5 +106,22 @@ Run ELK stack, import 2 kibana index patern and generate strong certificate from
 #Enter pass phrase for rootca/rootCA.key: enter password
 #Enter Export Password: empty password
 #Verifying - Enter Export Password: empty password
+
+```
+## Simple k3s ELK deployment
+```
+kubectl create namespace efk
+helm install elasticsearch bitnami/elasticsearch -n efk --set master.persistence.enabled=false --set data.persistence.enabled=false --set master.replicaCount=1 --set coordinating.replicaCount=1 --set ingest.replicaCount=1 --set data.replicaCount=1 --set data.resources.requests.memory=256m --set data.heapSize=128m 
+helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set ingress.enabled=true --set ingress.hostname=api1.neva.cloudns.nz
+
+#Get logs from files /logs/*
+kubectl apply -f deployment\kuber\elk\logstash-deployment.yaml -n efk
+kubectl apply -f deployment\kuber\elk\filebeat-deployment.yaml -n efk
+kubectl get all -n efk
+
+#Get logs from stdout
+kubectl apply -f deployment\kuber\elk\fluentd-config-map.yaml  
+kubectl apply -f deployment\kuber\elk\fluentd-daemonset.yaml
+kubectl get all -n kube-system
 
 ```

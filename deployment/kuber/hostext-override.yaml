@@ -1,0 +1,8 @@
+ingress:
+  hosts:
+    - host: shop.neva.cloudns.nz
+  tls: 
+    - secretName: prod-ext-tls
+      hosts:
+        - shop.neva.cloudns.nz
+

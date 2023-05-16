@@ -1,0 +1,7 @@
+ingress:
+  hosts:
+    - host: prod.neva.loc
+  tls: 
+    - secretName: prod-local-tls
+      hosts:
+        - prod.neva.loc

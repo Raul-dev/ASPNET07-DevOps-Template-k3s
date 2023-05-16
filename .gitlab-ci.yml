@@ -170,6 +170,8 @@ k3s-deployment:
         --set ingress.hosts[0].host=$PROD_BASE_URL
         --set "ingress.tls[0].hosts={$PROD_BASE_URL}"
         --set ingress.tls[0].secretName=$PROD_SECRET_TLS
+        --set ApiSettings__CatalogUrl="http://catalogapi/catalog"
+        --set ApiSettings__CatalogHost_EXTERNAL="https://$PROD_BASE_URL/catalog"            
         shopmanager ./deployment/kuber/shopmanager/ -f ./deployment/kuber/valuesshopmanager.yaml
     - > 
         helm upgrade --atomic --install --kube-insecure-skip-tls-verify 

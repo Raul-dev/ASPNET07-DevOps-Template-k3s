@@ -42,9 +42,9 @@ spec:
           - name: ASPNETCORE_PATHBASE
             value: /admin
           - name: ApiSettings__CatalogUrl
-            value: {{ .Values.ApiSettings__CatalogUrl }}"https://prod.neva.loc/catalog/"
+            value: {{ .Values.ApiSettings__CatalogUrl }}
           - name: ApiSettings__CatalogHost_EXTERNAL
-            value: {{ .Values.ApiSettings__CatalogHost_EXTERNAL }}"https://prod.neva.loc/catalog/"            
+            value: {{ .Values.ApiSettings__CatalogHost_EXTERNAL }}
           name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}

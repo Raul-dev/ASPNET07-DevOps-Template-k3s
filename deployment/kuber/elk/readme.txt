@@ -27,7 +27,7 @@ curl http://localhost:9200/_cluster/state?pretty
  список индексов должен пустым
  curl -XGET "http://localhost:9200/_cat/indices?v&index=.kib*&h=index"
 
-helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set ingress.enabled=true --set ingress.hostname=shop.neva.cloudns.nz
+helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set ingress.enabled=true --set ingress.hostname=shop.example.com
 helm delete kibana --namespace efk
 kubectl port-forward svc/kibana 8080:5601 -n efk
   echo "Visit http://127.0.0.1:8080 to use your application"
@@ -111,9 +111,9 @@ kubectl apply -f elk/elasticsearch-pod.yaml -n efk
 kubectl apply -f elk/kibana-pod.yaml -n efk
 kubectl port-forward --namespace efk svc/elasticsearch 9200:9200 
 curl -XGET "http://localhost:9200/_cat/indices?v&index=.kib*&h=index"
-http://shop.neva.cloudns.nz
+http://shop.example.com
 
-3) переключение 
+3) переключение контекстов кубер
 kubectl config get-contexts
 kubectl config use-context cluster.local
 kubectl config use-context default
@@ -122,4 +122,93 @@ elastic-system
 
 рабочий вариант
 helm install elasticsearch bitnami/elasticsearch -n efk --set master.persistence.enabled=false --set data.persistence.enabled=false --set master.replicaCount=1 --set coordinating.replicaCount=1 --set ingest.replicaCount=1 --set data.replicaCount=1 --set data.resources.requests.memory=256m --set data.heapSize=128m 
-helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set ingress.enabled=true --set ingress.hostname=shop.neva.cloudns.nz
+helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set ingress.enabled=true --set ingress.hostname=api1.example.com
+
+4) Установка kubernetes через kubespray (local-storage, установка Elasticsearch + Fluentd + Kibana, prometheus)
+https://habr.com/ru/articles/426959/
+
+helm install fluentd bitnami/fluentd --set elasticsearch.host=elasticsearch.efk.svc.cluster.local
+helm install fluentd bitnami/fluentd -n kube-system --set elasticsearch.host=elasticsearch.efk.svc.cluster.local
+helm show values bitnami/fluentd
+helm delete fluentd
+https://stackoverflow.com/questions/59530536/fluentd-is-working-but-no-index-is-being-created-on-elastcisearch
+https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes
+
+kubectl -n kube-system describe svc elasticsearch-logging
+
+kube-system  elasticsearch-logging
+
+https://stackoverflow.com/questions/51133077/how-can-i-debug-why-fluentd-is-not-sending-data-to-elasticsearch
+kubectl get all -n efk
+kubectl -n efk exec -it fluentd-0 -- sh
+kubectl -n efk exec -it fluentd-kbkn2 -- sh
+
+cat /etc/os-release
+не поставить curl
+install curl on debian
+curl http://elasticsearch:9200/_cat/indices
+
+https://www.digitalocean.com/community/tutorials/how-to-centralize-your-docker-logs-with-fluentd-and-elasticsearch-on-ubuntu-16-04
+
+docker run --log-driver=fluentd ubuntu /bin/echo 'Hello world'
+
+https://docs.dapr.io/operations/monitoring/logging/fluentd/
+kubectl apply -f ./fluentd-config-map.yaml
+kubectl apply -f ./fluentd-dapr-with-rbac.yaml
+
+Видео
+https://www.youtube.com/watch?v=PZHEgNKORbY
+https://github.com/justmeandopensource/elk
+
+https://www.rancher.com/quick-start
+sudo docker run --privileged -d --restart=unless-stopped -p 80:80 -p 443:443 rancher/rancher
+docker logs  container-id  2>&1 | grep "Bootstrap Password:"
+
+Видео
+https://www.youtube.com/watch?v=Gp0-7oVOtPw
+
+helm repo add dapr https://dapr.github.io/helm-charts/
+helm repo update
+helm install dapr dapr/dapr --namespace dapr-system --create-namespace --set global.logAsJson=true
+helm delete dapr --namespace dapr-system
+
+https://github.com/k3s-io/k3s/discussions/5530
+В итоге k3s оказался непригодным для сбора логов с stdout
+
+k3s
+https://community.traefik.io/t/log-aggregation-for-traefik-and-kubernetes-with-the-elastic-stack/9723
+helm show values elastic/filebeat
+helm install filebeat elastic/filebeat -f ./filebeat-values.yaml
+
+Как работает RBAC в Kubernetes
+https://habr.com/ru/companies/southbridge/articles/655409/
+
+Вообщем урезанная версия ELK для k3s из файлов:
+kubectl config use-context default
+kubectl get all -n efk
+helm install elasticsearch bitnami/elasticsearch -n efk --set master.persistence.enabled=false --set data.persistence.enabled=false --set master.replicaCount=1 --set coordinating.replicaCount=1 --set ingest.replicaCount=1 --set data.replicaCount=1 --set data.resources.requests.memory=256m --set data.heapSize=128m 
+helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set ingress.enabled=true --set ingress.hostname=api1.example.com
+kubectl apply -f logstash-deployment.yaml -n efk
+kubectl apply -f filebeat-deployment.yaml -n efk
+
+
+5) Логи с  экрана k8s
+
+kubectl config use-context kubernetes-admin@kubernetes  
+
+helm install elasticsearch bitnami/elasticsearch -n efk --set master.persistence.enabled=false --set data.persistence.enabled=false --set master.replicaCount=1 --set coordinating.replicaCount=1 --set ingest.replicaCount=1 --set data.replicaCount=1 --set data.resources.requests.memory=256m --set data.heapSize=128m 
+  kubectl port-forward --namespace efk svc/elasticsearch 9200:9200 
+  curl http://127.0.0.1:9200/
+helm show values bitnami/kibana
+
+helm install kibana --namespace efk bitnami/kibana --set image.tag=8.6.2-debian-11-r3 --set elasticsearch.hosts[0]=elasticsearch.efk.svc.cluster.local --set elasticsearch.port=9200 --set persistence.enabled=false
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl port-forward svc/kibana 8080:5601 --namespace efk
+
+kubectl apply -f demo-multiline.yaml 
+
+kubectl apply -f fluentd-config-map.yaml  
+kubectl apply -f fluentd-daemonset.yaml
+kubectl get all -n kube-system
+kubernetes.labels.k8s-app
+kubectl delete -f fluentd-daemonset.yaml

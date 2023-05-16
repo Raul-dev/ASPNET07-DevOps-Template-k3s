@@ -9,8 +9,8 @@ services:
       - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
       - ASPNETCORE_PATHBASE=${NS_SHOPMANAGER_PATHBASE:-/}
       - ConnectionStrings__DefaultConnection=Host=${NS_POSTGRES:-postgresdb};Port=${NS_POSTGRES_PORT:-5432};Database=nsshopmanager;Username=postgres;Password=${DB_PASSWORD:-postgres}
-      - ApiSettings__CatalogUrl=${NS_SCHEMA:-http}://${NS_BASE_URL:-localhost}/catalog/
-      - ApiSettings__CatalogHost_EXTERNAL=${NS_SCHEMA:-http}://${NS_BASE_URL:-localhost}/catalog/
+      - ApiSettings__CatalogUrl=http://catalogapi/catalog
+      - ApiSettings__CatalogHost_EXTERNAL=${NS_SCHEMA:-http}://${NS_BASE_URL:-localhost}/catalog
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/${NS_BASE_URL:-localhost}.crt 
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/https/${NS_BASE_URL:-localhost}.key 
       - ASPNETCORE_Kestrel__Certificates__Default__AllowInvalid=true

@@ -10,12 +10,9 @@ spec:
   - name: http
     port: 8080
     targetPort: 8080
-#  - name: https
-#    port: 8443
-#    targetPort: 8443
   selector:
     app: keycloak
-#  type: LoadBalancer
+
 ---
 
 apiVersion: apps/v1
@@ -112,7 +109,6 @@ spec:
       secretName: prod-ext-tls      
   rules:
   - host: shop.neva.cloudns.nz
-#    rule: "Host('shop.neva.cloudns.nz') && Path('/identity')"
     http:
       paths:
       - path: /identity
