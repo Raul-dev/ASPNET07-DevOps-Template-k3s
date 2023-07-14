@@ -4,6 +4,8 @@ services:
   postgresdb:
     build:
       context: ./postgresdb
+    image: aspnet7-postgres15
+    container_name: aspnet7-postgres15      
     healthcheck:
       test: test -f /tmp/finished.ok
       interval: 5s
@@ -13,7 +15,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${PASSWORD_DB:-postgres}
-      - DB_NAME_API=keycloak
+      - DB_NAME_API=nsadmin
     ports:
       - '54321:5432'
     volumes:

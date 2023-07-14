@@ -2,10 +2,23 @@ Param
 (
     [parameter(Mandatory=$false)][bool]$IsSimpleCertificate=$true
 )
+Function CheckingAdmPermissions {
+
+    Write-Host "Checking for elevated permissions..."
+    $IsAdministrator = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+    Write-Host "$Is Runn as Administrator=" $IsAdministrator
+    if ( -NOT $IsAdministrator)
+    {
+        throw [Exception]::new("Insufficient permissions to run this script. Open the PowerShell console as an administrator and run this script again.")
+    }
+
+}
 try{
+
 # This worked only if $IsSimpleCertificate=false
 if (-not(Test-Path -Path rootca/rootCA.crt -PathType Leaf) -and $IsSimpleCertificate -eq $false)
 {
+    CheckingAdmPermissions
     Write-Host "Generate root CA"
     New-Item -Path "." -Name "rootca" -ItemType "directory" -Force
     #1)Created key
@@ -22,8 +35,8 @@ if (-not(Test-Path -Path rootca/rootCA.crt -PathType Leaf) -and $IsSimpleCertifi
 
 if (-not(Test-Path -Path aspcertificat.pfx -PathType Leaf) -Or -not(Test-Path -Path ..\nginx\certs\host.docker.internal.crt -PathType Leaf))
 {
-    
     Write-Host "Certificate host.docker.internal.crt not exists"
+    CheckingAdmPermissions
     if($IsSimpleCertificate -eq $true){
         
         openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -keyout aspcertificat.key -out aspcertificat.crt -subj "/CN=host.docker.internal" -extensions v3_ca -extensions v3_req -config host.docker.internal.conf

@@ -95,6 +95,8 @@ try{
 	#	exit
 	#}
 
+
+
 	#Clean log folder
 	$LogPath=$Projectpath+"/src/logs"
 	if (Test-Path -Path $LogPath) {
@@ -108,6 +110,22 @@ try{
 	Write-Host "docker-compose  start"
 	docker-compose -f docker-compose.misc.yml up -d
 	
+	#Check database starting
+	Write-Host "Check database starting"
+	$res = 0
+	Do {
+		Start-Sleep -s 5
+		$ResultSearch =""
+		$ResultSearch = docker ps -a | Select-String -Pattern "aspnet7-postgres15" | Select-String -Pattern  "(healthy)"
+		Write-Host $ResultSearch
+		if(-Not [string]::IsNullOrEmpty($ResultSearch)){
+			break
+		}
+		$res = $res + 1
+		Write-Host "Wait database startting. ${res}"
+	}while (($res -le 5))
+	
+
 	# Export kibana index patern
 	if($ELKenable -eq $true){
 		docker-compose -f docker-compose.elk.yml up -d
@@ -136,6 +154,16 @@ try{
 		}
 		while (($res -le 20) -and ($StatusCode -ne 500))
 		.\srv\kibanaview\CreateIndex.ps1 $Projectpath\src\srv\kibanaview\export.ndjson
+	}
+	
+	Write-Host "Check database on Port 54321"
+	$check=Test-NetConnection localhost -Port 54321 -WarningAction SilentlyContinue
+	Write-Host $check
+	If ($check.tcpTestSucceeded -ne $true){
+		Write-Host "Database not found on Port 54321"
+		netstat -ano -p tcp | Select-String "0.0.0.0:54321"
+		Set-Location -Path $Projectpath
+		exit
 	}
 	docker-compose --env-file ./.env.win up 
 	$ExitCode = 0

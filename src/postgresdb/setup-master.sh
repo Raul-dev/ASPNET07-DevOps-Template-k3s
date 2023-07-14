@@ -20,6 +20,7 @@ echo "log_file_mode=444" >> $PGDATA/postgresql.conf
 set -e
 
 echo "CREATE DB "$DB_NAME_API
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -c "CREATE DATABASE keycloak;"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -c "CREATE DATABASE $DB_NAME_API;"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d $DB_NAME_API < ./dbsetup/init_api.sql
 

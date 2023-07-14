@@ -13,11 +13,16 @@ this is a sample development environment for microservice application
 - Kubernates (k3s) production GitLab CI/CD Helm 
 - Powershell
 
+### Prerequisites
+
+- Install [Docker](https://www.docker.com/)
+- Install [Docker Compose](https://docs.docker.com/compose/install/)
+- Install [Win64OpenSSL](https://slproweb.com/download/Win64OpenSSL-3_1_1.msi)
+- Add ENV Variable for running openssl.exe: Path=Path:C:\Program Files\OpenSSL-Win64\bin
+
 ## Start project localy
 for Windows
-Prerequisites:
-- Install [openssl](https://thesecmaster.com/procedure-to-install-openssl-on-the-windows-platform/)
-  used version: OpenSSL 3.0.7 1 Nov 2022 (Library: OpenSSL 3.0.7 1 Nov 2022)
+
 ```
 
 ./start.ps1
